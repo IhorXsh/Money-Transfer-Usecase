@@ -1,12 +1,13 @@
 package repository
 
 import (
-	"github.com/IhorXsh/domain"
+	"github.com/IhorXsh/money-transfer/contracts"
+	"github.com/IhorXsh/money-transfer/domain"
 )
 
 type AccountRepo struct{}
 
-func (r *AccountRepo) UpdateMut(account *domain.Account) *Mutation {
+func (r *AccountRepo) UpdateMut(account *domain.Account) *contracts.Mutation {
 	if account == nil {
 		return nil
 	}
@@ -23,7 +24,7 @@ func (r *AccountRepo) UpdateMut(account *domain.Account) *Mutation {
 		return nil
 	}
 
-	return &Mutation{
+	return &contracts.Mutation{
 		Table:   "accounts",
 		ID:      string(account.Id),
 		Updates: updates,

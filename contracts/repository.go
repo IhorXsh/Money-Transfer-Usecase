@@ -1,9 +1,9 @@
-package repository
+package contracts
 
 import (
 	"context"
 
-	"github.com/IhorXsh/domain"
+	"github.com/IhorXsh/money-transfer/domain"
 )
 
 type AccountRepository interface {

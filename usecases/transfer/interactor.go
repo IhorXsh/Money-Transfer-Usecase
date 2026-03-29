@@ -4,15 +4,15 @@ import (
 	"context"
 	"errors"
 
-	"github.com/IhorXsh/domain"
-	"github.com/IhorXsh/repository"
+	"github.com/IhorXsh/money-transfer/contracts"
+	"github.com/IhorXsh/money-transfer/domain"
 )
 
 type Interactor struct {
-	repo repository.AccountRepository
+	repo contracts.AccountRepository
 }
 
-func NewInteractor(repo repository.AccountRepository) *Interactor {
+func NewInteractor(repo contracts.AccountRepository) *Interactor {
 	return &Interactor{repo: repo}
 }
 
@@ -22,7 +22,7 @@ type TransferRequest struct {
 	Amount        int64
 }
 
-func (uc *Interactor) Execute(ctx context.Context, req *TransferRequest) (*repository.Plan, error) {
+func (uc *Interactor) Execute(ctx context.Context, req *TransferRequest) (*contracts.Plan, error) {
 	if req == nil {
 		return nil, errors.New("request is isnvalid")
 	}
@@ -46,7 +46,7 @@ func (uc *Interactor) Execute(ctx context.Context, req *TransferRequest) (*repos
 		return nil, err
 	}
 
-	plan := repository.NewPlan()
+	plan := contracts.NewPlan()
 	plan.Add(uc.repo.UpdateMut(source))
 	plan.Add(uc.repo.UpdateMut(dest))
 
