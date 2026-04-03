@@ -2,10 +2,9 @@ package transfer
 
 import (
 	"context"
-	"errors"
 
-	"github.com/IhorXsh/money-transfer/contracts"
-	"github.com/IhorXsh/money-transfer/domain"
+	"github.com/IhorXsh/Money-Transfer-Usecase/contracts"
+	"github.com/IhorXsh/Money-Transfer-Usecase/domain"
 )
 
 type Interactor struct {
@@ -24,10 +23,16 @@ type TransferRequest struct {
 
 func (uc *Interactor) Execute(ctx context.Context, req *TransferRequest) (*contracts.Plan, error) {
 	if req == nil {
-		return nil, errors.New("request is isnvalid")
+		return nil, ErrInvalidRequest
 	}
 	if req.Amount <= 0 {
-		return nil, errors.New("amount must be positive")
+		return nil, ErrInvalidAmount
+	}
+	if req.FromAccountID == "" || req.ToAccountID == "" {
+		return nil, ErrMissingAccount
+	}
+	if req.FromAccountID == req.ToAccountID {
+		return nil, ErrSameAccount
 	}
 
 	source, err := uc.repo.Retrieve(ctx, req.FromAccountID)

@@ -1,7 +1,5 @@
 package domain
 
-import "errors"
-
 type AccountID string
 
 type AccountStatus string
@@ -29,10 +27,13 @@ func NewAccount(id AccountID, balance int64, status AccountStatus) *Account {
 
 func (a *Account) Withdraw(amount int64) error {
 	if amount <= 0 {
-		return errors.New("amount must be positive")
+		return ErrInvalidAmount
+	}
+	if a.Status != AccountStatusActive {
+		return ErrAccountInactive
 	}
 	if a.Balance < amount {
-		return errors.New("insufficient funds")
+		return ErrInsufficient
 	}
 	a.Balance -= amount
 	a.ChangedFields["balance"] = ""
@@ -41,7 +42,10 @@ func (a *Account) Withdraw(amount int64) error {
 
 func (a *Account) Deposit(amount int64) error {
 	if amount <= 0 {
-		return errors.New("amount must be positive")
+		return ErrInvalidAmount
+	}
+	if a.Status != AccountStatusActive {
+		return ErrAccountInactive
 	}
 	a.Balance += amount
 	a.ChangedFields["balance"] = ""
