@@ -1,4 +1,4 @@
-# Money Transfer
+# Money-Transfer-Usecase
 
 Small Go project that implements a money transfer use case for a backend developer assessment. The task follows the architecture rule:
 

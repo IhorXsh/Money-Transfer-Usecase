@@ -7,21 +7,18 @@ import (
 
 	"github.com/IhorXsh/Money-Transfer-Usecase/contracts"
 	"github.com/IhorXsh/Money-Transfer-Usecase/domain"
-	"github.com/IhorXsh/Money-Transfer-Usecase/repository"
 	"github.com/stretchr/testify/require"
 )
 
 type fakeRepo struct {
 	accounts map[domain.AccountID]*domain.Account
 	errByID  map[domain.AccountID]error
-	updater  *repository.AccountRepo
 }
 
 func newFakeRepo(accounts map[domain.AccountID]*domain.Account) *fakeRepo {
 	return &fakeRepo{
 		accounts: accounts,
 		errByID:  make(map[domain.AccountID]error),
-		updater:  &repository.AccountRepo{},
 	}
 }
 
@@ -37,7 +34,25 @@ func (r *fakeRepo) Retrieve(_ context.Context, id domain.AccountID) (*domain.Acc
 }
 
 func (r *fakeRepo) UpdateMut(account *domain.Account) *contracts.Mutation {
-	return r.updater.UpdateMut(account)
+	if account == nil {
+		return nil
+	}
+	updates := make(map[string]interface{})
+	if _, ok := account.ChangedFields["balance"]; ok {
+		updates["balance"] = account.Balance
+	}
+	if _, ok := account.ChangedFields["status"]; ok {
+		updates["status"] = account.Status
+	}
+	if len(updates) == 0 {
+		return nil
+	}
+
+	return &contracts.Mutation{
+		Table:   "accounts",
+		ID:      string(account.Id),
+		Updates: updates,
+	}
 }
 
 func TestInteractorExecute(t *testing.T) {
