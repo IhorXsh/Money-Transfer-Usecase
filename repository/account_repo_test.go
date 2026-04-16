@@ -23,10 +23,10 @@ func TestAccountRepoRetrieve(t *testing.T) {
 		{
 			name: "success",
 			repo: NewAccountRepo(map[domain.AccountID]*domain.Account{
-				acc.Id: acc,
+				acc.ID(): acc,
 			}),
 			ctx:       context.Background(),
-			id:        acc.Id,
+			id:        acc.ID(),
 			expectErr: nil,
 		},
 		{
@@ -46,14 +46,14 @@ func TestAccountRepoRetrieve(t *testing.T) {
 		{
 			name: "context canceled",
 			repo: NewAccountRepo(map[domain.AccountID]*domain.Account{
-				acc.Id: acc,
+				acc.ID(): acc,
 			}),
 			ctx: func() context.Context {
 				ctx, cancel := context.WithCancel(context.Background())
 				cancel()
 				return ctx
 			}(),
-			id:        acc.Id,
+			id:        acc.ID(),
 			expectErr: context.Canceled,
 		},
 	}
@@ -103,8 +103,7 @@ func TestAccountRepoUpdateMut(t *testing.T) {
 			name: "balance changed",
 			account: func() *domain.Account {
 				a := domain.NewAccount("a2", 100, domain.AccountStatusActive)
-				a.Balance = 90
-				a.ChangedFields["balance"] = ""
+				_ = a.Withdraw(10)
 				return a
 			}(),
 			wantKeys:  []string{"balance"},
@@ -115,8 +114,7 @@ func TestAccountRepoUpdateMut(t *testing.T) {
 			name: "status changed",
 			account: func() *domain.Account {
 				a := domain.NewAccount("a3", 100, domain.AccountStatusActive)
-				a.Status = domain.AccountStatusInactive
-				a.ChangedFields["status"] = ""
+				a.Changes.MarkDirty("status")
 				return a
 			}(),
 			wantKeys:  []string{"status"},
@@ -127,10 +125,8 @@ func TestAccountRepoUpdateMut(t *testing.T) {
 			name: "balance and status changed",
 			account: func() *domain.Account {
 				a := domain.NewAccount("a4", 100, domain.AccountStatusActive)
-				a.Balance = 80
-				a.Status = domain.AccountStatusInactive
-				a.ChangedFields["balance"] = ""
-				a.ChangedFields["status"] = ""
+				_ = a.Withdraw(20)
+				a.Changes.MarkDirty("status")
 				return a
 			}(),
 			wantKeys:  []string{"balance", "status"},

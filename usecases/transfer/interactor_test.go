@@ -38,11 +38,11 @@ func (r *fakeRepo) UpdateMut(account *domain.Account) *contracts.Mutation {
 		return nil
 	}
 	updates := make(map[string]interface{})
-	if _, ok := account.ChangedFields["balance"]; ok {
-		updates["balance"] = account.Balance
+	if account.Changes.IsDirty("balance") {
+		updates["balance"] = account.Balance()
 	}
-	if _, ok := account.ChangedFields["status"]; ok {
-		updates["status"] = account.Status
+	if account.Changes.IsDirty("status") {
+		updates["status"] = account.Status()
 	}
 	if len(updates) == 0 {
 		return nil
@@ -50,7 +50,7 @@ func (r *fakeRepo) UpdateMut(account *domain.Account) *contracts.Mutation {
 
 	return &contracts.Mutation{
 		Table:   "accounts",
-		ID:      string(account.Id),
+		ID:      string(account.ID()),
 		Updates: updates,
 	}
 }
@@ -148,8 +148,8 @@ func TestInteractorExecute(t *testing.T) {
 				return repo, nil
 			},
 			assert: func(t *testing.T, plan *contracts.Plan, repo *fakeRepo) {
-				require.Equal(t, int64(60), repo.accounts["a5"].Balance)
-				require.Equal(t, int64(90), repo.accounts["a6"].Balance)
+				require.Equal(t, int64(60), repo.accounts["a5"].Balance())
+				require.Equal(t, int64(90), repo.accounts["a6"].Balance())
 				require.Len(t, plan.Mutations(), 2)
 			},
 		},

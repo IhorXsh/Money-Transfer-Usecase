@@ -30,5 +30,5 @@ func main() {
 	}
 
 	fmt.Printf("transfer plan: %+v\n", plan.Mutations())
-	fmt.Printf("balances: a1=%d, a2=%d\n", accounts["a1"].Balance, accounts["a2"].Balance)
+	fmt.Printf("balances: a1=%d, a2=%d\n", accounts["a1"].Balance(), accounts["a2"].Balance())
 }

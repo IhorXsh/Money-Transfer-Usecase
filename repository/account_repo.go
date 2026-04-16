@@ -36,13 +36,11 @@ func (r *AccountRepo) UpdateMut(account *domain.Account) *contracts.Mutation {
 		return nil
 	}
 	updates := make(map[string]interface{})
-	_, ok := account.ChangedFields["balance"]
-	if ok {
-		updates["balance"] = account.Balance
+	if account.Changes.IsDirty("balance") {
+		updates["balance"] = account.Balance()
 	}
-	_, ok = account.ChangedFields["status"]
-	if ok {
-		updates["status"] = account.Status
+	if account.Changes.IsDirty("status") {
+		updates["status"] = account.Status()
 	}
 	if len(updates) == 0 {
 		return nil
@@ -50,7 +48,7 @@ func (r *AccountRepo) UpdateMut(account *domain.Account) *contracts.Mutation {
 
 	return &contracts.Mutation{
 		Table:   "accounts",
-		ID:      string(account.Id),
+		ID:      string(account.ID()),
 		Updates: updates,
 	}
 }
