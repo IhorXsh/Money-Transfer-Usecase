@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 
-	"github.com/IhorXsh/Money-Transfer-Usecase/contracts"
-	"github.com/IhorXsh/Money-Transfer-Usecase/domain"
+	"github.com/IhorXsh/Money-Transfer-Usecase/internal/contracts"
+	"github.com/IhorXsh/Money-Transfer-Usecase/internal/domain"
 )
 
 type AccountRepo struct {

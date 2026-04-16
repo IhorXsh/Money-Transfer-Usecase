@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/IhorXsh/Money-Transfer-Usecase/contracts"
-	"github.com/IhorXsh/Money-Transfer-Usecase/domain"
+	"github.com/IhorXsh/Money-Transfer-Usecase/internal/contracts"
+	"github.com/IhorXsh/Money-Transfer-Usecase/internal/domain"
 	"github.com/stretchr/testify/require"
 )
 

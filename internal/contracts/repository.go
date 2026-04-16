@@ -3,7 +3,7 @@ package contracts
 import (
 	"context"
 
-	"github.com/IhorXsh/Money-Transfer-Usecase/domain"
+	"github.com/IhorXsh/Money-Transfer-Usecase/internal/domain"
 )
 
 type AccountRepository interface {

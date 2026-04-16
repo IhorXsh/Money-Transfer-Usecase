@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/IhorXsh/Money-Transfer-Usecase/domain"
+	"github.com/IhorXsh/Money-Transfer-Usecase/internal/domain"
 	"github.com/stretchr/testify/require"
 )
 
