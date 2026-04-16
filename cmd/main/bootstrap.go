@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -15,6 +17,11 @@ import (
 )
 
 func run() error {
+	cfg, err := loadConfig(os.Args[1:])
+	if err != nil {
+		return err
+	}
+
 	ctx := context.Background()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
@@ -40,20 +47,44 @@ func run() error {
 	uc := transfer.NewInteractor(repo)
 	srv := server.New(logger, uc)
 
-	appAddr := ":8080"
-	metricsAddr := ":9090"
-
 	errCh := make(chan error, 2)
 
 	go func() {
-		logger.Info("metrics server started", "addr", metricsAddr)
-		errCh <- fmt.Errorf("metrics server: %w", http.ListenAndServe(metricsAddr, srv.MetricsHandler()))
+		logger.Info("metrics server started", "addr", cfg.metricsAddr)
+		errCh <- fmt.Errorf("metrics server: %w", http.ListenAndServe(cfg.metricsAddr, srv.MetricsHandler()))
 	}()
 
 	go func() {
-		logger.Info("http server started", "addr", appAddr)
-		errCh <- fmt.Errorf("http server: %w", http.ListenAndServe(appAddr, srv.Handler()))
+		logger.Info("http server started", "addr", cfg.appAddr)
+		errCh <- fmt.Errorf("http server: %w", http.ListenAndServe(cfg.appAddr, srv.Handler()))
 	}()
 
 	return <-errCh
+}
+
+type config struct {
+	appAddr     string
+	metricsAddr string
+}
+
+func loadConfig(args []string) (config, error) {
+	fs := flag.NewFlagSet("money-transfer", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+
+	appPort := fs.Int("app-port", 8080, "application HTTP port")
+	metricsPort := fs.Int("metrics-port", 9090, "metrics HTTP port")
+	if err := fs.Parse(args); err != nil {
+		return config{}, fmt.Errorf("parse flags: %w", err)
+	}
+	if *appPort <= 0 || *appPort > 65535 {
+		return config{}, fmt.Errorf("invalid app-port: %d", *appPort)
+	}
+	if *metricsPort <= 0 || *metricsPort > 65535 {
+		return config{}, fmt.Errorf("invalid metrics-port: %d", *metricsPort)
+	}
+
+	return config{
+		appAddr:     fmt.Sprintf(":%d", *appPort),
+		metricsAddr: fmt.Sprintf(":%d", *metricsPort),
+	}, nil
 }
