@@ -12,6 +12,12 @@ The use case validates the request, loads both accounts, calls domain methods (`
 go run ./cmd/main
 ```
 
+Custom ports:
+
+```bash
+go run ./cmd/main --app-port=8081 --metrics-port=9091
+```
+
 Health check:
 
 ```bash
@@ -52,6 +58,12 @@ Important metrics:
 ```bash
 docker build -t money-transfer:local .
 docker run --rm money-transfer:local
+```
+
+Custom ports in container:
+
+```bash
+docker run --rm -p 8080:8081 -p 9090:9091 money-transfer:local --app-port=8081 --metrics-port=9091
 ```
 
 ## CI/CD
