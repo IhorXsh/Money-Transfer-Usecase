@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 	"github.com/IhorXsh/Money-Transfer-Usecase/internal/domain"
 	"github.com/IhorXsh/Money-Transfer-Usecase/internal/repository"
 	"github.com/IhorXsh/Money-Transfer-Usecase/internal/usecases/transfer"
+	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type transferRequest struct {
@@ -30,7 +33,7 @@ func (s *Server) healthz(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	status := http.StatusOK
 	s.writeJSON(w, status, map[string]string{"status": "ok"})
-	s.observeRequest("/healthz", r.Method, status, start)
+	s.observeRequest(r.Context(), "/healthz", r.Method, status, start)
 }
 
 func (s *Server) transfer(w http.ResponseWriter, r *http.Request) {
@@ -40,7 +43,7 @@ func (s *Server) transfer(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		status = http.StatusMethodNotAllowed
 		s.writeJSON(w, status, errorResponse{Error: "method not allowed"})
-		s.observeRequest("/transfer", r.Method, status, start)
+		s.observeRequest(r.Context(), "/transfer", r.Method, status, start)
 		return
 	}
 
@@ -48,8 +51,8 @@ func (s *Server) transfer(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		status = http.StatusBadRequest
 		s.writeJSON(w, status, errorResponse{Error: "invalid json"})
-		s.logger.Warn("transfer request decode failed", "error", err)
-		s.observeRequest("/transfer", r.Method, status, start)
+		s.logger.Warn("transfer request decode failed", "error", err, "trace_id", traceIDFromContext(r.Context()))
+		s.observeRequest(r.Context(), "/transfer", r.Method, status, start)
 		return
 	}
 
@@ -72,8 +75,9 @@ func (s *Server) transfer(w http.ResponseWriter, r *http.Request) {
 			"amount", in.Amount,
 			"status", status,
 			"error", err,
+			"trace_id", traceIDFromContext(r.Context()),
 		)
-		s.observeRequest("/transfer", r.Method, status, start)
+		s.observeRequest(r.Context(), "/transfer", r.Method, status, start)
 		return
 	}
 
@@ -85,17 +89,53 @@ func (s *Server) transfer(w http.ResponseWriter, r *http.Request) {
 		"amount", in.Amount,
 		"status", status,
 		"duration_ms", time.Since(start).Milliseconds(),
+		"trace_id", traceIDFromContext(r.Context()),
 	)
-	s.observeRequest("/transfer", r.Method, status, start)
+	s.observeRequest(r.Context(), "/transfer", r.Method, status, start)
 }
 
-func (s *Server) observeRequest(endpoint, method string, status int, start time.Time) {
+func (s *Server) observeRequest(ctx context.Context, endpoint, method string, status int, start time.Time) {
 	statusLabel := http.StatusText(status)
-	s.m.requestDuration.WithLabelValues(endpoint, method, statusLabel).Observe(time.Since(start).Seconds())
-	s.m.requestsTotal.WithLabelValues(endpoint, method, statusLabel).Inc()
-	if status >= http.StatusBadRequest {
-		s.m.requestErrors.WithLabelValues(endpoint, method, statusLabel).Inc()
+	duration := time.Since(start).Seconds()
+	durationObserver := s.m.requestDuration.WithLabelValues(endpoint, method, statusLabel)
+	totalCounter := s.m.requestsTotal.WithLabelValues(endpoint, method, statusLabel)
+
+	traceID := traceIDFromContext(ctx)
+	if traceID != "" {
+		exemplar := prometheus.Labels{"trace_id": traceID}
+		if observer, ok := durationObserver.(prometheus.ExemplarObserver); ok {
+			observer.ObserveWithExemplar(duration, exemplar)
+		} else {
+			durationObserver.Observe(duration)
+		}
+		if adder, ok := totalCounter.(prometheus.ExemplarAdder); ok {
+			adder.AddWithExemplar(1, exemplar)
+		} else {
+			totalCounter.Inc()
+		}
+	} else {
+		durationObserver.Observe(duration)
+		totalCounter.Inc()
 	}
+
+	if status >= http.StatusBadRequest {
+		errorCounter := s.m.requestErrors.WithLabelValues(endpoint, method, statusLabel)
+		if traceID != "" {
+			if adder, ok := errorCounter.(prometheus.ExemplarAdder); ok {
+				adder.AddWithExemplar(1, prometheus.Labels{"trace_id": traceID})
+				return
+			}
+		}
+		errorCounter.Inc()
+	}
+}
+
+func traceIDFromContext(ctx context.Context) string {
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if !spanCtx.IsValid() {
+		return ""
+	}
+	return spanCtx.TraceID().String()
 }
 
 func mapErrorToStatus(err error) int {
