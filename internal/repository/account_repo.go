@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/IhorXsh/Money-Transfer-Usecase/internal/contracts"
 	"github.com/IhorXsh/Money-Transfer-Usecase/internal/domain"
@@ -18,15 +19,15 @@ func NewAccountRepo(accounts map[domain.AccountID]*domain.Account) *AccountRepo 
 func (r *AccountRepo) Retrieve(ctx context.Context, id domain.AccountID) (*domain.Account, error) {
 	if ctx != nil {
 		if err := ctx.Err(); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("retrieve account %s canceled: %w", id, err)
 		}
 	}
 	if r == nil || r.accounts == nil {
-		return nil, ErrAccountNotFound
+		return nil, errAccountNotFound
 	}
 	account, ok := r.accounts[id]
 	if !ok {
-		return nil, ErrAccountNotFound
+		return nil, errAccountNotFound
 	}
 	return account, nil
 }

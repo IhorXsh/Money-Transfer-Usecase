@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"time"
 
@@ -140,14 +139,14 @@ func traceIDFromContext(ctx context.Context) string {
 
 func mapErrorToStatus(err error) int {
 	switch {
-	case errors.Is(err, transfer.ErrInvalidRequest),
-		errors.Is(err, transfer.ErrInvalidAmount),
-		errors.Is(err, transfer.ErrMissingAccount),
-		errors.Is(err, transfer.ErrSameAccount),
-		errors.Is(err, domain.ErrInsufficient),
-		errors.Is(err, domain.ErrAccountInactive):
+	case transfer.IsInvalidRequest(err),
+		transfer.IsInvalidAmount(err),
+		transfer.IsMissingAccount(err),
+		transfer.IsSameAccount(err),
+		domain.IsInsufficient(err),
+		domain.IsAccountInactive(err):
 		return http.StatusBadRequest
-	case errors.Is(err, repository.ErrAccountNotFound):
+	case repository.IsAccountNotFound(err):
 		return http.StatusNotFound
 	default:
 		return http.StatusInternalServerError

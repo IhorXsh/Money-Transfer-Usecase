@@ -34,14 +34,14 @@ func TestAccountRepoRetrieve(t *testing.T) {
 			repo:      NewAccountRepo(map[domain.AccountID]*domain.Account{}),
 			ctx:       context.Background(),
 			id:        "missing",
-			expectErr: ErrAccountNotFound,
+			expectErr: errAccountNotFound,
 		},
 		{
 			name:      "nil map",
 			repo:      NewAccountRepo(nil),
 			ctx:       context.Background(),
 			id:        "a1",
-			expectErr: ErrAccountNotFound,
+			expectErr: errAccountNotFound,
 		},
 		{
 			name: "context canceled",

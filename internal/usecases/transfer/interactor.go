@@ -2,6 +2,7 @@ package transfer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/IhorXsh/Money-Transfer-Usecase/internal/contracts"
 	"github.com/IhorXsh/Money-Transfer-Usecase/internal/domain"
@@ -33,9 +34,9 @@ func (uc *Interactor) Execute(ctx context.Context, req *TransferRequest) (*contr
 	defer span.End()
 
 	if req == nil {
-		span.RecordError(ErrInvalidRequest)
-		span.SetStatus(codes.Error, ErrInvalidRequest.Error())
-		return nil, ErrInvalidRequest
+		span.RecordError(errInvalidRequest)
+		span.SetStatus(codes.Error, errInvalidRequest.Error())
+		return nil, errInvalidRequest
 	}
 	span.SetAttributes(
 		attribute.String("transfer.from_account_id", string(req.FromAccountID)),
@@ -44,43 +45,47 @@ func (uc *Interactor) Execute(ctx context.Context, req *TransferRequest) (*contr
 	)
 
 	if req.Amount <= 0 {
-		span.RecordError(ErrInvalidAmount)
-		span.SetStatus(codes.Error, ErrInvalidAmount.Error())
-		return nil, ErrInvalidAmount
+		span.RecordError(errInvalidAmount)
+		span.SetStatus(codes.Error, errInvalidAmount.Error())
+		return nil, errInvalidAmount
 	}
 	if req.FromAccountID == "" || req.ToAccountID == "" {
-		span.RecordError(ErrMissingAccount)
-		span.SetStatus(codes.Error, ErrMissingAccount.Error())
-		return nil, ErrMissingAccount
+		span.RecordError(errMissingAccount)
+		span.SetStatus(codes.Error, errMissingAccount.Error())
+		return nil, errMissingAccount
 	}
 	if req.FromAccountID == req.ToAccountID {
-		span.RecordError(ErrSameAccount)
-		span.SetStatus(codes.Error, ErrSameAccount.Error())
-		return nil, ErrSameAccount
+		span.RecordError(errSameAccount)
+		span.SetStatus(codes.Error, errSameAccount.Error())
+		return nil, errSameAccount
 	}
 
 	source, err := uc.repo.Retrieve(ctx, req.FromAccountID)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		return nil, err
+		wrappedErr := fmt.Errorf("retrieve source account %s: %w", req.FromAccountID, err)
+		span.RecordError(wrappedErr)
+		span.SetStatus(codes.Error, wrappedErr.Error())
+		return nil, wrappedErr
 	}
 	dest, err := uc.repo.Retrieve(ctx, req.ToAccountID)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		return nil, err
+		wrappedErr := fmt.Errorf("retrieve destination account %s: %w", req.ToAccountID, err)
+		span.RecordError(wrappedErr)
+		span.SetStatus(codes.Error, wrappedErr.Error())
+		return nil, wrappedErr
 	}
 
 	if err := source.Withdraw(req.Amount); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		return nil, err
+		wrappedErr := fmt.Errorf("withdraw from account %s: %w", req.FromAccountID, err)
+		span.RecordError(wrappedErr)
+		span.SetStatus(codes.Error, wrappedErr.Error())
+		return nil, wrappedErr
 	}
 	if err := dest.Deposit(req.Amount); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		return nil, err
+		wrappedErr := fmt.Errorf("deposit to account %s: %w", req.ToAccountID, err)
+		span.RecordError(wrappedErr)
+		span.SetStatus(codes.Error, wrappedErr.Error())
+		return nil, wrappedErr
 	}
 
 	plan := contracts.NewPlan()

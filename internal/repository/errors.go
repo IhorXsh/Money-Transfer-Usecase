@@ -2,4 +2,8 @@ package repository
 
 import "errors"
 
-var ErrAccountNotFound = errors.New("account not found")
+var errAccountNotFound = errors.New("account not found")
+
+func IsAccountNotFound(err error) bool {
+	return errors.Is(err, errAccountNotFound)
+}

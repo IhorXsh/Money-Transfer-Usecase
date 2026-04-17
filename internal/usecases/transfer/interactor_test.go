@@ -63,6 +63,7 @@ func TestInteractorExecute(t *testing.T) {
 		req       *TransferRequest
 		buildRepo func() (*fakeRepo, error)
 		assert    func(t *testing.T, plan *contracts.Plan, repo *fakeRepo)
+		assertErr func(t *testing.T, err error)
 		expectErr error
 	}
 
@@ -71,7 +72,7 @@ func TestInteractorExecute(t *testing.T) {
 			name:      "nil request",
 			req:       nil,
 			buildRepo: func() (*fakeRepo, error) { return newFakeRepo(nil), nil },
-			expectErr: ErrInvalidRequest,
+			expectErr: errInvalidRequest,
 		},
 		{
 			name: "non-positive amount",
@@ -81,7 +82,7 @@ func TestInteractorExecute(t *testing.T) {
 				Amount:        0,
 			},
 			buildRepo: func() (*fakeRepo, error) { return newFakeRepo(nil), nil },
-			expectErr: ErrInvalidAmount,
+			expectErr: errInvalidAmount,
 		},
 		{
 			name: "source retrieve error",
@@ -131,7 +132,9 @@ func TestInteractorExecute(t *testing.T) {
 				})
 				return repo, nil
 			},
-			expectErr: domain.ErrInsufficient,
+			assertErr: func(t *testing.T, err error) {
+				require.True(t, domain.IsInsufficient(err))
+			},
 		},
 		{
 			name: "success",
@@ -169,6 +172,11 @@ func TestInteractorExecute(t *testing.T) {
 			if expectedErr != nil {
 				require.Error(t, err)
 				require.ErrorIs(t, err, expectedErr)
+				return
+			}
+			if tc.assertErr != nil {
+				require.Error(t, err)
+				tc.assertErr(t, err)
 				return
 			}
 

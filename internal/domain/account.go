@@ -63,13 +63,13 @@ func (a *Account) Status() AccountStatus {
 
 func (a *Account) Withdraw(amount int64) error {
 	if amount <= 0 {
-		return ErrInvalidAmount
+		return errInvalidAmount
 	}
 	if a.status != AccountStatusActive {
-		return ErrAccountInactive
+		return errAccountInactive
 	}
 	if a.balance < amount {
-		return ErrInsufficient
+		return errInsufficient
 	}
 
 	a.balance -= amount
@@ -79,10 +79,10 @@ func (a *Account) Withdraw(amount int64) error {
 
 func (a *Account) Deposit(amount int64) error {
 	if amount <= 0 {
-		return ErrInvalidAmount
+		return errInvalidAmount
 	}
 	if a.status != AccountStatusActive {
-		return ErrAccountInactive
+		return errAccountInactive
 	}
 
 	a.balance += amount

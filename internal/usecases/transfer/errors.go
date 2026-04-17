@@ -1,10 +1,28 @@
 package transfer
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
-	ErrInvalidRequest = errors.New("request is nil")
-	ErrSameAccount    = errors.New("source and destination must differ")
-	ErrMissingAccount = errors.New("account id is required")
-	ErrInvalidAmount  = errors.New("amount must be positive")
+	errInvalidRequest = errors.New("request is nil")
+	errSameAccount    = errors.New("source and destination must differ")
+	errMissingAccount = errors.New("account id is required")
+	errInvalidAmount  = errors.New("amount must be positive")
 )
+
+func IsInvalidRequest(err error) bool {
+	return errors.Is(err, errInvalidRequest)
+}
+
+func IsSameAccount(err error) bool {
+	return errors.Is(err, errSameAccount)
+}
+
+func IsMissingAccount(err error) bool {
+	return errors.Is(err, errMissingAccount)
+}
+
+func IsInvalidAmount(err error) bool {
+	return errors.Is(err, errInvalidAmount)
+}
