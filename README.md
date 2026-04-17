@@ -68,7 +68,7 @@ docker run --rm -p 8080:8081 -p 9090:9091 money-transfer:local --app-port=8081 -
 
 ## CI/CD
 
-- `CI`: runs `gofmt`, `go vet`, and `go test` on pull requests and pushes to `main`.
+- `CI`: runs `gofmt`, `go vet`, `golangci-lint`, and `go test` on pull requests and pushes to `main`.
 - `CD`: runs after successful `CI` on `main` and publishes Docker image to `GHCR`.
 
 Docker image naming in registry:
