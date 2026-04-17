@@ -48,13 +48,13 @@ func newMetrics(reg prometheus.Registerer) *metrics {
 
 type Server struct {
 	logger *slog.Logger
-	uc     *transfer.Interactor
+	uc     transfer.InteractorInterface
 	mu     sync.Mutex
 	mux    *http.ServeMux
 	m      *metrics
 }
 
-func New(logger *slog.Logger, uc *transfer.Interactor) *Server {
+func New(logger *slog.Logger, uc transfer.InteractorInterface) *Server {
 	if logger == nil {
 		logger = slog.Default()
 	}

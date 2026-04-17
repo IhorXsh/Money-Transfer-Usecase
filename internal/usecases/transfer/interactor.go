@@ -10,6 +10,10 @@ import (
 	"go.opentelemetry.io/otel/codes"
 )
 
+type InteractorInterface interface {
+	Execute(ctx context.Context, req *TransferRequest) (*contracts.Plan, error)
+}
+
 type Interactor struct {
 	repo contracts.AccountRepository
 }
